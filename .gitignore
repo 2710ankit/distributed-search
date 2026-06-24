@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+.env/
+.venv/
+
+# Environment Variables
+.env
+.env.*
+
+# VS Code
+.vscode/
+
+# Cursor
+.cursor/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+.pyre/
+.ruff_cache/
+
+# Build files
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Database files
+*.db
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+
+# Secrets / Config
+config/secrets.py
+*.pem
+*.key
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Temporary files
+*.swp
+*.swo
