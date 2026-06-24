@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Header
+from fastapi import Request
 from sqlalchemy.orm import Session
 from app.db.postgres import get_db
 from app.dtos.document import CreateDocumentRequest
@@ -13,24 +14,23 @@ router = APIRouter(
 
 @router.post("")
 def create_document_route(
+    request: Request,
     payload: CreateDocumentRequest,
     db: Session = Depends(get_db),
-    x_tenant_id: str = Header(...)
 ):
-    print(x_tenant_id,"x_tenant_id")
     return create_document(
         db=db,
-        tenant_id=x_tenant_id,
+        tenant_id=request.state.tenant_id,
         payload=payload
     )
 
 
 @router.get("")
 def list_documents_route(
+    request: Request,
     db: Session = Depends(get_db),
-    x_tenant_id: str = Header(...)
 ):
     return list_documents(
         db=db,
-        tenant_id=x_tenant_id,
+        tenant_id=request.state.tenant_id,
     )   
