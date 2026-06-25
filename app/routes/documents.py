@@ -5,7 +5,7 @@ from fastapi import Request
 from sqlalchemy.orm import Session
 from app.db.postgres import get_db
 from app.dtos.document import CreateDocumentRequest
-from app.services.documents import create_document, list_documents, search_documents
+from app.services.documents import create_document, delete_document, list_documents, search_documents
 
 router = APIRouter(
     prefix="/documents",
@@ -46,4 +46,19 @@ def search_documents_route(
         db=db,
         tenant_id=request.state.tenant_id,
         query=query
+    )
+
+
+@router.delete("/{document_id}")
+def delete_dcoument_route(
+    request: Request,
+    document_id: str,
+    db: Session = Depends(get_db),
+):
+    print(request,"REQUETT")
+    print(document_id,"DOCUMENT_ID")
+    return delete_document(
+        db=db,
+        tenant_id=request.state.tenant_id,
+        document_id=document_id
     )

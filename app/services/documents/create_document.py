@@ -18,6 +18,7 @@ def create_document(
     )
 
     db.add(document)
+    db.flush()  
 
 
     es.index(

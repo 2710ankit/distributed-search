@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session
 from app.db.elasticsearch import es
 from app.db.redis import redis_client
 import json
