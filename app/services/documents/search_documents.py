@@ -21,8 +21,8 @@ def search_documents(
 
     redis_key = f"search:{tenant_id}:{query}:{page}:{page_size}"
     cached = redis_client.get(redis_key)
-    # if cached:
-        # return json.loads(cached)
+    if cached:
+        return json.loads(cached)
 
     response = es.search(
         index="documents",
