@@ -1,7 +1,11 @@
+import json
+
 from sqlalchemy.orm import Session
+
 from app.db.elasticsearch import es
 from app.db.redis import redis_client
-import json
+
+CACHE_TTL_SECONDS = 60 * 60 * 24
 
 
 def search_documents(
@@ -12,15 +16,13 @@ def search_documents(
     page_size: int,
 ):
     page = max(page, 1)
-    page_size = min(max(page_size, 1), 100)  # Limit max page size
+    page_size = min(max(page_size, 1), 100)
     offset = (page - 1) * page_size
 
-    print(page,page_size,"PAGE AND PAGE SIZE")
     redis_key = f"search:{tenant_id}:{query}:{page}:{page_size}"
-    redis_client.delete(redis_key)
-    redis_data = redis_client.get(redis_key)
-    if redis_data:
-        return json.loads(redis_data)
+    cached = redis_client.get(redis_key)
+    # if cached:
+        # return json.loads(cached)
 
     response = es.search(
         index="documents",
@@ -32,135 +34,51 @@ def search_documents(
                     {
                         "multi_match": {
                             "query": query,
-                            "fields": [
-                                "title",
-                                "content"
-                            ],
-                            "type": "bool_prefix"
+                            "fields": ["title", "content"],
+                            "type": "best_fields",
+                            "fuzziness": "AUTO",
                         }
                     }
                 ],
-                "filter": [
-                    {
-                        "term": {
-                            "tenant_id": tenant_id
-                        }
-                    }
-                ]
+                "filter": [{"term": {"tenant_id": tenant_id}}],
             }
         },
         sort=[
             {"_score": {"order": "desc"}},
-            {"created_at": {"order": "desc"}}
-        ]
+            {"created_at": {"order": "desc"}},
+        ],
+        highlight={
+            "fields": {
+                "title": {},
+                "content": {"fragment_size": 150, "number_of_fragments": 1},
+            }
+        },
     )
 
     hits = response["hits"]["hits"]
     total = response["hits"]["total"]["value"]
 
+    items = []
+    for hit in hits:
+        item = {
+            "id": hit["_id"],
+            **hit["_source"],
+            "score": hit["_score"],
+        }
+        if "highlight" in hit:
+            item["highlight"] = hit["highlight"]
+        items.append(item)
+
     result = {
         "page": page,
         "page_size": page_size,
         "total": total,
-        "total_pages": (total + page_size - 1) // page_size,
-        "items": [
-            {
-                "id": hit["_id"],
-                **hit["_source"],
-                "score": hit["_score"],
-            }
-            for hit in hits
-        ],
+        "total_pages": (total + page_size - 1) // page_size if total else 0,
+        "items": items,
     }
+    print("HEREEEE")
 
-    redis_client.delete(redis_key)
     redis_client.set(redis_key, json.dumps(result))
-    redis_client.expire(redis_key, 60 * 60 * 24)
+    redis_client.expire(redis_key, CACHE_TTL_SECONDS)
 
     return result
-
-
-
-
-
-
-#     import json
-# from sqlalchemy.orm import Session
-# from app.db.elasticsearch import es
-# from app.db.redis import redis_client
-
-
-# def search_documents(
-#     db: Session,
-#     tenant_id: str,
-#     query: str,
-#     size: int = 10,
-#     search_after: list | None = None,
-# ):
-#     # clamp size
-#     size = min(max(size, 1), 100)
-
-#     redis_key = f"search:{tenant_id}:{query}:{size}:{json.dumps(search_after, default=str)}"
-
-
-#     cached = redis_client.get(redis_key)
-#     # if cached:
-#     #     return json.loads(cached)
- 
-#     es_query = {
-#         "bool": {
-#             "must": [
-#                 {
-#                     "multi_match": {
-#                         "query": query,
-#                         "fields": ["title", "content"],
-#                         "type": "bool_prefix",
-#                     }
-#                 }
-#             ],
-#             "filter": [
-#                 {"term": {"tenant_id": tenant_id}}
-#             ],
-#         }
-#     } 
-
-#     body = {
-#         "size": size,
-#         "query": es_query,
-#         "sort": [
-#             {"_score": "desc"},
-#             {"created_at": "asc"}   
-#         ],
-#     }
-
-#     # cursor pagination
-#     if search_after:
-#         body["search_after"] = search_after
-
-#     response = es.search(index="documents", body=body)
-
-#     hits = response["hits"]["hits"]
-
-#     items = [
-#         {
-#             "id": hit["_id"],
-#             **hit["_source"],
-#             "score": hit.get("_score"),
-#         }
-#         for hit in hits
-#     ]
-
-#     next_cursor = None
-#     if hits:
-#         # ALWAYS safe now because sort is defined
-#         next_cursor = hits[-1].get("sort")
-
-#     result = {
-#         "items": items,
-#         "next_cursor": next_cursor,
-#     }
-
-#     redis_client.set(redis_key, json.dumps(result))
-#     redis_client.expire(redis_key, 60 * 60 * 24)
-
-#     return result

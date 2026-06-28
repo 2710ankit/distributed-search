@@ -1,10 +1,5 @@
-from sqlalchemy import Boolean, Column
-from sqlalchemy import String
-from sqlalchemy import Text
-from sqlalchemy import DateTime
-from sqlalchemy import Integer
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.sql import func
-from uuid import uuid4
 
 from app.db.postgres import Base
 

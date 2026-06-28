@@ -1,43 +1,39 @@
 import os
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.db.redis import redis_client
 
-
-
+DEFAULT_RATE_LIMIT = 1000
+DEFAULT_RATE_LIMIT_WINDOW = 60
+EXEMPT_PATHS = {"/health", "/docs", "/openapi.json", "/redoc"}
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
-        RATE_LIMIT = int(os.getenv("RATE_LIMIT"))
-        WINDOW = int(os.getenv("RATE_LIMIT_WINDOW"))
+        if request.url.path in EXEMPT_PATHS:
+            return await call_next(request)
 
+        rate_limit = int(os.getenv("RATE_LIMIT", DEFAULT_RATE_LIMIT))
+        window = int(os.getenv("RATE_LIMIT_WINDOW", DEFAULT_RATE_LIMIT_WINDOW))
 
         tenant_id = request.headers.get("X-Tenant-Id")
-        print(WINDOW,"WINDOW")
-        print(RATE_LIMIT,"RATE_LIMIT")
+        if not tenant_id and request.url.path == "/search":
+            tenant_id = request.query_params.get("tenant")
+
         if tenant_id:
             key = f"rate_limit:{tenant_id}"
+            current = redis_client.incr(key)
+            if current == 1:
+                redis_client.expire(key, window)
 
-            current = redis_client.get(key)
+            if current > rate_limit:
+                return JSONResponse(
+                    status_code=429,
+                    content={"message": "Rate limit exceeded"},
+                )
 
-            if current is None:
-                redis_client.setex(key, WINDOW, 1)
-
-            else:
-                current = redis_client.incr(key)
-
-                if current > RATE_LIMIT:
-                    return JSONResponse(
-                        status_code=429,
-                        content={
-                            "message": "Rate limit exceeded"
-                        }
-                    )
-
-        response = await call_next(request)
-
-        return response
+        return await call_next(request)

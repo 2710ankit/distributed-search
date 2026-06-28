@@ -64,9 +64,9 @@ def bulk_index(batch_size=10000):
         documents = (
             db.query(Document)
             .filter(Document.indexed == False)
+            .order_by(Document.id)
             .offset(offset)
             .limit(batch_size)
-            .order_by(Document.id)
             .all()
         )
 
@@ -81,6 +81,7 @@ def bulk_index(batch_size=10000):
                     "tenant_id": document.tenant_id,
                     "title": document.title,
                     "content": document.content,
+                    "created_at": document.created_at.isoformat() if document.created_at else None,
                 },
             }
             for document in documents
@@ -101,6 +102,6 @@ def bulk_index(batch_size=10000):
 
 
 
-# bulk_insert()
-
-bulk_index()
+if __name__ == "__main__":
+    # bulk_insert()
+    bulk_index()

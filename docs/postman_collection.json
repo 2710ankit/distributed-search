@@ -1,0 +1,101 @@
+{
+  "info": {
+    "name": "Distributed Document Search",
+    "description": "API collection for the distributed document search service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "tenantId", "value": "netflix" }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Create Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Quarterly Revenue Report\",\n  \"content\": \"Revenue grew 15% year over year.\"\n}"
+        },
+        "url": "{{baseUrl}}/documents"
+      }
+    },
+    {
+      "name": "Get Document",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-Tenant-Id", "value": "{{tenantId}}" }],
+        "url": "{{baseUrl}}/documents/1"
+      }
+    },
+    {
+      "name": "List Documents",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-Tenant-Id", "value": "{{tenantId}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/documents?page=1&page_size=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["documents"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "page_size", "value": "10" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Search (Spec)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/search?q=revenue&tenant={{tenantId}}&page=1&page_size=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["search"],
+          "query": [
+            { "key": "q", "value": "revenue" },
+            { "key": "tenant", "value": "{{tenantId}}" },
+            { "key": "page", "value": "1" },
+            { "key": "page_size", "value": "10" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Search (Header Tenant)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-Tenant-Id", "value": "{{tenantId}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/documents/search?query=revenue&page=1&page_size=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["documents", "search"],
+          "query": [
+            { "key": "query", "value": "revenue" },
+            { "key": "page", "value": "1" },
+            { "key": "page_size", "value": "10" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Document",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "X-Tenant-Id", "value": "{{tenantId}}" }],
+        "url": "{{baseUrl}}/documents/1"
+      }
+    }
+  ]
+}

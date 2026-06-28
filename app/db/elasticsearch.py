@@ -1,7 +1,7 @@
+import os
+
 from elasticsearch import Elasticsearch
 
-es = Elasticsearch(
-    "http://localhost:9200"
-)
+ES_HOST = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
 
- 
+es = Elasticsearch(ES_HOST)

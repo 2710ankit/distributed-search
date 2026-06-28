@@ -1,16 +1,14 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.db.elasticsearch import es
 from app.models.documents import Document
-from app.services.documents.cache import invalidate_tenant_search_cache
 
 
-def delete_document(
+def get_document(
     db: Session,
     tenant_id: str,
     document_id: int,
-) -> int:
+) -> Document:
     document = (
         db.query(Document)
         .filter(Document.id == document_id, Document.tenant_id == tenant_id)
@@ -20,11 +18,4 @@ def delete_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    es.delete(index="documents", id=str(document_id), ignore=404)
-
-    db.delete(document)
-    db.commit()
-
-    invalidate_tenant_search_cache(tenant_id)
-
-    return document_id
+    return document

@@ -1,9 +1,13 @@
+import os
+
 from celery import Celery
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 celery = Celery(
     "distributed_search",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/0",
+    broker=REDIS_URL,
+    backend=REDIS_URL,
 )
 
 celery.conf.update(
@@ -14,7 +18,4 @@ celery.conf.update(
     enable_utc=True,
 )
 
-celery.conf.imports = (
-    "app.tasks",
-)
-
+celery.conf.imports = ("app.tasks.document_task",)
