@@ -1,4 +1,4 @@
-from sqlalchemy import Column
+from sqlalchemy import Boolean, Column
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import DateTime
@@ -33,6 +33,7 @@ class Document(Base):
         Text,
         nullable=False
     )
+    indexed = Column(Boolean, default=False, nullable=False)
 
     created_at = Column(
         DateTime,

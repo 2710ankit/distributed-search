@@ -1,10 +1,33 @@
 from sqlalchemy.orm import Session
 from app.models.documents import Document
 
+
 def list_documents(
     db: Session,
-    tenant_id: str
+    tenant_id: str,
+    page: int = 1,
+    page_size: int = 10,
 ):
-    documents = db.query(Document).filter(Document.tenant_id == tenant_id).all()
+    page = max(page, 1)
+    page_size = min(max(page_size, 1), 100)
+    offset = (page - 1) * page_size
 
-    return documents
+    query = db.query(Document).filter(Document.tenant_id == tenant_id)
+
+    total = query.count()
+
+    documents = (
+        query
+        .order_by(Document.id)  # or created_at if available
+        .offset(offset)
+        .limit(page_size)
+        .all()
+    )
+
+    return {
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+        "total_pages": (total + page_size - 1) // page_size,
+        "items": documents,
+    }

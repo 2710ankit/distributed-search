@@ -40,12 +40,17 @@ def list_documents_route(
 def search_documents_route(
     request: Request,
     query: str,
+    page: int = 1,
+    page_size: int = 10,
     db: Session = Depends(get_db),
 ):
+    print(query,"QUERY")
     return search_documents(
         db=db,
         tenant_id=request.state.tenant_id,
-        query=query
+        query=query,
+        page=page,
+        page_size=page_size
     )
 
 

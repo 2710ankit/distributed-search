@@ -1,0 +1,1 @@
+from app.tasks.document_task import index_document
